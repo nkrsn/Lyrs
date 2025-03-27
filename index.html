@@ -32,10 +32,19 @@
       font-weight: bold;
       background-color: #ff0;
     }
+    .controls { text-align: center; margin-top: 1rem; }
   </style>
 </head>
 <body>
   <h1>Complete the Lyric Challenge</h1>
+  <div class="controls">
+    <label for="genreSelect">Filter by Genre:</label>
+    <select id="genreSelect">
+      <option value="all">All Genres</option>
+    </select>
+    <br>
+    <button id="refreshListButton">Refresh Song List</button>
+  </div>
   <p>Select a song to practice completing a snippet of its lyrics:</p>
   <select id="songSelect">
     <option value="">--Select a Song--</option>
@@ -43,11 +52,10 @@
   <br>
   <button id="fetchButton">Fetch Lyrics &amp; Prepare Quiz</button>
   <button id="newSongButton">New Song Quiz</button>
-  <button id="refreshListButton">Refresh Song List</button>
   <div id="snippetDisplay"></div>
   <div id="quizSection" style="display:none;">
-    <p>Fill in the missing words (3–10 words):</p>
-    <textarea id="userInput" rows="2" cols="50"></textarea><br>
+    <p>Fill in the missing words:</p>
+    <textarea id="userInput" rows="2" cols="50" placeholder="Type here..."></textarea><br>
     <button id="checkButton">Check Answer</button>
     <button id="showAnswerButton">Show Answer</button>
     <div id="result"></div>
@@ -55,125 +63,52 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // A master list of over 100 popular songs.
-      const masterSongs = [
-        {artist: "Queen", title: "Bohemian Rhapsody"},
-        {artist: "John Lennon", title: "Imagine"},
-        {artist: "Gloria Gaynor", title: "I Will Survive"},
-        {artist: "Michael Jackson", title: "Billie Jean"},
-        {artist: "Neil Diamond", title: "Sweet Caroline"},
-        {artist: "Journey", title: "Don't Stop Believin'"},
-        {artist: "ABBA", title: "Dancing Queen"},
-        {artist: "The Beatles", title: "Hey Jude"},
-        {artist: "Elvis Presley", title: "Jailhouse Rock"},
-        {artist: "Whitney Houston", title: "I Will Always Love You"},
-        {artist: "Eagles", title: "Hotel California"},
-        {artist: "Led Zeppelin", title: "Stairway to Heaven"},
-        {artist: "Bob Dylan", title: "Like a Rolling Stone"},
-        {artist: "Nirvana", title: "Smells Like Teen Spirit"},
-        {artist: "Marvin Gaye", title: "What's Going On"},
-        {artist: "Aretha Franklin", title: "Respect"},
-        {artist: "The Beach Boys", title: "Good Vibrations"},
-        {artist: "Jimi Hendrix", title: "Purple Haze"},
-        {artist: "The Beatles", title: "Yesterday"},
-        {artist: "The Temptations", title: "My Girl"},
-        {artist: "Stevie Wonder", title: "Superstition"},
-        {artist: "Bob Marley", title: "No Woman No Cry"},
-        {artist: "U2", title: "One"},
-        {artist: "Oasis", title: "Wonderwall"},
-        {artist: "Bon Jovi", title: "Livin' on a Prayer"},
-        {artist: "Michael Jackson", title: "Beat It"},
-        {artist: "Michael Jackson", title: "Thriller"},
-        {artist: "Santana", title: "Smooth"},
-        {artist: "Adele", title: "Rolling in the Deep"},
-        {artist: "Ed Sheeran", title: "Shape of You"},
-        {artist: "Mark Ronson ft. Bruno Mars", title: "Uptown Funk"},
-        {artist: "The Weeknd", title: "Blinding Lights"},
-        {artist: "Adele", title: "Someone Like You"},
-        {artist: "Lady Gaga", title: "Bad Romance"},
-        {artist: "Beyoncé", title: "Crazy in Love"},
-        {artist: "Backstreet Boys", title: "I Want It That Way"},
-        {artist: "The Rolling Stones", title: "Paint It Black"},
-        {artist: "AC/DC", title: "Back In Black"},
-        {artist: "Guns N' Roses", title: "Sweet Child o' Mine"},
-        {artist: "Metallica", title: "Enter Sandman"},
-        {artist: "Prince", title: "Purple Rain"},
-        {artist: "Eminem", title: "Lose Yourself"},
-        {artist: "Coldplay", title: "Yellow"},
-        {artist: "Katy Perry", title: "Firework"},
-        {artist: "Rihanna", title: "Umbrella"},
-        {artist: "Drake", title: "Hotline Bling"},
-        {artist: "Taylor Swift", title: "Shake It Off"},
-        {artist: "Britney Spears", title: "Toxic"},
-        {artist: "Sia", title: "Chandelier"},
-        {artist: "Shakira", title: "Hips Don't Lie"},
-        {artist: "Red Hot Chili Peppers", title: "Under the Bridge"},
-        {artist: "Linkin Park", title: "In the End"},
-        {artist: "Foo Fighters", title: "Everlong"},
-        {artist: "Green Day", title: "Boulevard of Broken Dreams"},
-        {artist: "The Police", title: "Every Breath You Take"},
-        {artist: "Celine Dion", title: "My Heart Will Go On"},
-        {artist: "Madonna", title: "Like a Prayer"},
-        {artist: "Billy Joel", title: "Piano Man"},
-        {artist: "Eurythmics", title: "Sweet Dreams (Are Made of This)"},
-        {artist: "Fleetwood Mac", title: "Go Your Own Way"},
-        {artist: "Bonnie Tyler", title: "Total Eclipse of the Heart"},
-        {artist: "Journey", title: "Open Arms"},
-        {artist: "Cyndi Lauper", title: "Girls Just Want to Have Fun"},
-        {artist: "Def Leppard", title: "Pour Some Sugar On Me"},
-        {artist: "Queen", title: "We Will Rock You"},
-        {artist: "Queen", title: "We Are the Champions"},
-        {artist: "The Beatles", title: "Let It Be"},
-        {artist: "Simon & Garfunkel", title: "The Sound of Silence"},
-        {artist: "U2", title: "Beautiful Day"},
-        {artist: "Snoop Dogg", title: "Drop It Like It's Hot"},
-        {artist: "Dr. Dre", title: "The Next Episode"},
-        {artist: "Notorious B.I.G.", title: "Juicy"},
-        {artist: "Outkast", title: "Hey Ya!"},
-        {artist: "Kanye West", title: "Stronger"},
-        {artist: "Jay-Z", title: "99 Problems"},
-        {artist: "Linkin Park", title: "Numb"},
-        {artist: "Paramore", title: "Misery Business"},
-        {artist: "Imagine Dragons", title: "Radioactive"},
-        {artist: "Miley Cyrus", title: "Wrecking Ball"},
-        {artist: "OneRepublic", title: "Counting Stars"},
-        {artist: "Ariana Grande", title: "Thank U, Next"},
-        {artist: "Bill Withers", title: "Ain't No Sunshine"},
-        {artist: "Etta James", title: "At Last"},
-        {artist: "Frank Sinatra", title: "My Way"},
-        {artist: "Dean Martin", title: "That's Amore"},
-        {artist: "Louis Armstrong", title: "What a Wonderful World"},
-        {artist: "Elton John", title: "Rocket Man"},
-        {artist: "Rod Stewart", title: "Maggie May"},
-        {artist: "Phil Collins", title: "In the Air Tonight"},
-        {artist: "George Michael", title: "Faith"},
-        {artist: "Spice Girls", title: "Wannabe"},
-        {artist: "Destiny's Child", title: "Survivor"},
-        {artist: "Kool & The Gang", title: "Celebration"},
-        {artist: "Earth, Wind & Fire", title: "September"},
-        {artist: "The Supremes", title: "Stop! In the Name of Love"},
-        {artist: "The Jackson 5", title: "I Want You Back"},
-        {artist: "Maroon 5", title: "Sugar"},
-        {artist: "Coldplay", title: "Viva La Vida"},
-        {artist: "Imagine Dragons", title: "Believer"},
-        {artist: "One Direction", title: "What Makes You Beautiful"},
-        {artist: "Lorde", title: "Royals"},
-        {artist: "The Black Keys", title: "Lonely Boy"},
-        {artist: "MGMT", title: "Electric Feel"},
-        {artist: "Tame Impala", title: "The Less I Know the Better"},
-        {artist: "Arctic Monkeys", title: "Do I Wanna Know?"},
-        {artist: "The Killers", title: "Mr. Brightside"},
-        {artist: "Kings of Leon", title: "Use Somebody"},
-        {artist: "Fall Out Boy", title: "Sugar, We're Goin Down"},
-        {artist: "Panic! At The Disco", title: "I Write Sins Not Tragedies"},
-        {artist: "Paramore", title: "Ain't It Fun"},
-        {artist: "The Script", title: "Breakeven"},
-        {artist: "Hozier", title: "Take Me to Church"},
-        {artist: "Vance Joy", title: "Riptide"}
+      // Fallback master list (if songs.json isn't loaded)
+      const fallbackSongs = [
+        {artist: "Queen", title: "Bohemian Rhapsody", genre: "Rock"},
+        {artist: "John Lennon", title: "Imagine", genre: "Pop"},
+        {artist: "Gloria Gaynor", title: "I Will Survive", genre: "Disco"},
+        {artist: "Michael Jackson", title: "Billie Jean", genre: "Pop"},
+        {artist: "Neil Diamond", title: "Sweet Caroline", genre: "Pop"},
+        {artist: "Journey", title: "Don't Stop Believin'", genre: "Rock"},
+        {artist: "ABBA", title: "Dancing Queen", genre: "Pop"},
+        {artist: "The Beatles", title: "Hey Jude", genre: "Rock"},
+        {artist: "Elvis Presley", title: "Jailhouse Rock", genre: "Rock"},
+        {artist: "Whitney Houston", title: "I Will Always Love You", genre: "R&B"}
+        // ... (expand to hundreds as needed)
       ];
       
-      // This will store the current list of songs shown in the dropdown.
-      let currentSongs = [];
+      let masterSongsData = []; // Will hold the dynamically loaded songs.
+      let currentSongs = []; // The current list shown in the dropdown.
+
+      // Attempt to load songs from an external JSON file.
+      async function loadSongs() {
+        try {
+          const response = await fetch('songs.json');
+          const data = await response.json();
+          masterSongsData = data;
+          refreshGenreDropdown();
+          refreshSongList();
+        } catch (error) {
+          console.error("Error loading songs, falling back to hard-coded list:", error);
+          masterSongsData = fallbackSongs;
+          refreshGenreDropdown();
+          refreshSongList();
+        }
+      }
+      
+      // Populate the genre filter dropdown with unique genres.
+      function refreshGenreDropdown() {
+        const genreSelect = document.getElementById('genreSelect');
+        genreSelect.innerHTML = '<option value="all">All Genres</option>';
+        const genres = [...new Set(masterSongsData.map(song => song.genre))].sort();
+        genres.forEach(genre => {
+          const option = document.createElement('option');
+          option.value = genre;
+          option.textContent = genre;
+          genreSelect.appendChild(option);
+        });
+      }
 
       // Shuffle function (Fisher-Yates algorithm)
       function shuffle(array) {
@@ -184,26 +119,30 @@
         return array;
       }
 
-      // Refresh the song list by randomly selecting 5 songs from the master list.
+      // Refresh the song list by randomly selecting 5 songs filtered by genre.
       function refreshSongList() {
-        const shuffled = shuffle([...masterSongs]);
+        const genreSelect = document.getElementById('genreSelect');
+        const selectedGenre = genreSelect.value;
+        let filteredSongs = masterSongsData;
+        if (selectedGenre !== "all") {
+          filteredSongs = masterSongsData.filter(song => song.genre === selectedGenre);
+        }
+        const shuffled = shuffle([...filteredSongs]);
         currentSongs = shuffled.slice(0, 5);
         const songSelect = document.getElementById('songSelect');
         songSelect.innerHTML = '<option value="">--Select a Song--</option>';
         currentSongs.forEach((song, index) => {
           const option = document.createElement('option');
           option.value = index;
-          option.textContent = `${song.title} by ${song.artist}`;
+          option.textContent = `${song.title} by ${song.artist} (${song.genre})`;
           songSelect.appendChild(option);
         });
       }
 
-      // Initially populate the dropdown.
-      refreshSongList();
-
       let hiddenText = "";             // Stores the missing words.
       let snippetWithPlaceholder = ""; // Stores the snippet with the placeholder.
-
+      let missingWordCount = 0; // Count for missing words
+      
       // Fetch lyrics using the free lyrics.ovh API.
       async function fetchLyrics(artist, title) {
         try {
@@ -221,18 +160,19 @@
       }
 
       // Prepare a snippet quiz:
-      // 1. Choose a snippet of 6 consecutive lines from the full lyrics.
+      // 1. Choose a snippet of 6 consecutive lines from the lyrics.
       // 2. In one randomly chosen line (with at least 5 words), hide a contiguous block of 3–10 words.
+      // 3. The placeholder indicates the number of words missing.
       function prepareSnippetQuiz(lyrics) {
         const lines = lyrics.split('\n').filter(line => line.trim() !== "");
         if (lines.length < 6) {
-          return { snippet: lyrics, hidden: "" };
+          return { snippet: lyrics, hidden: "", count: 0 };
         }
         const snippetLength = 6;
         const startIndex = Math.floor(Math.random() * (lines.length - snippetLength + 1));
         let snippetLines = lines.slice(startIndex, startIndex + snippetLength);
 
-        // Choose a candidate line that has at least 5 words.
+        // Select a candidate line that has at least 5 words.
         let candidateIndices = [];
         snippetLines.forEach((line, idx) => {
           const wordCount = line.split(/\s+/).filter(word => word.trim() !== "").length;
@@ -244,25 +184,26 @@
         const words = targetLine.split(' ').filter(word => word.trim() !== "");
         const totalWords = words.length;
 
-        // Determine the block length (between 3 and 10 words, but not more than available words - 1).
+        // Determine block length (between 3 and 10 words, but not more than available words - 1).
         const minBlock = 3;
         const maxBlock = Math.min(10, totalWords - 1);
         const blockLength = Math.floor(Math.random() * (maxBlock - minBlock + 1)) + minBlock;
+        missingWordCount = blockLength; // store the count
         const maxStart = totalWords - blockLength;
         const wordStart = Math.floor(Math.random() * (maxStart + 1));
         hiddenText = words.slice(wordStart, wordStart + blockLength).join(' ');
 
-        // Replace the selected words with a placeholder.
-        const placeholder = `<span class="placeholder">________</span>`;
+        // Create a placeholder that indicates the number of missing words.
+        const placeholder = `<span class="placeholder">________ (${blockLength} words)</span>`;
         const newLineWords = words.slice(0, wordStart)
                               .concat([placeholder])
                               .concat(words.slice(wordStart + blockLength));
         snippetLines[chosenLineIndex] = newLineWords.join(' ');
 
-        return { snippet: snippetLines.join('\n'), hidden: hiddenText };
+        return { snippet: snippetLines.join('\n'), hidden: hiddenText, count: blockLength };
       }
 
-      // Normalize text for a basic comparison.
+      // Normalize text for comparison.
       function normalizeText(text) {
         return text.trim().toLowerCase().replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ");
       }
@@ -279,11 +220,17 @@
         const quizData = prepareSnippetQuiz(lyrics);
         snippetWithPlaceholder = quizData.snippet;
         hiddenText = quizData.hidden;
+        missingWordCount = quizData.count;
         document.getElementById('snippetDisplay').innerHTML = snippetWithPlaceholder;
         document.getElementById('quizSection').style.display = "block";
         document.getElementById('result').textContent = "";
         document.getElementById('userInput').value = "";
       }
+
+      // Event: When the genre filter changes, refresh the song list.
+      document.getElementById('genreSelect').addEventListener('change', () => {
+        refreshSongList();
+      });
 
       // Event: Fetch quiz for the selected song.
       document.getElementById('fetchButton').addEventListener('click', async () => {
@@ -305,7 +252,7 @@
         await prepareQuizForSong(song);
       });
 
-      // Event: Refresh the song list (selects five new songs from the master list).
+      // Event: Refresh the song list (selects five new songs filtered by genre).
       document.getElementById('refreshListButton').addEventListener('click', () => {
         refreshSongList();
       });
@@ -328,6 +275,9 @@
       document.getElementById('showAnswerButton').addEventListener('click', () => {
         document.getElementById('result').textContent = "The missing lyrics are: " + hiddenText;
       });
+
+      // Start by loading songs dynamically.
+      loadSongs();
     });
   </script>
 </body>
