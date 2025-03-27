@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Complete the Lyric</title>
+  <title>Complete the Lyric Challenge</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,46 +10,49 @@
       margin: 2rem auto;
       padding: 0 1rem;
     }
-    h1 {
-      text-align: center;
-    }
+    h1 { text-align: center; }
     select, button, textarea {
       font-size: 1rem;
       margin: 0.5rem 0;
       padding: 0.5rem;
     }
-    #lyricDisplay {
+    #snippetDisplay {
       white-space: pre-wrap;
       border: 1px solid #ccc;
       padding: 1rem;
       margin-top: 1rem;
+      background: #f9f9f9;
     }
     #result {
       font-weight: bold;
       margin-top: 1rem;
       white-space: pre-wrap;
     }
+    .placeholder {
+      font-weight: bold;
+      background-color: #ff0;
+    }
   </style>
 </head>
 <body>
-  <h1>Complete the Lyric</h1>
-  <p>Select a song to practice completing its lyrics:</p>
+  <h1>Complete the Lyric Challenge</h1>
+  <p>Select a song to practice completing a snippet of its lyrics:</p>
   <select id="songSelect">
     <option value="">--Select a Song--</option>
   </select>
   <br>
-  <button id="fetchButton">Fetch Lyrics & Prepare Quiz</button>
-  <div id="lyricDisplay"></div>
+  <button id="fetchButton">Fetch Lyrics &amp; Prepare Quiz</button>
+  <div id="snippetDisplay"></div>
   <div id="quizSection" style="display:none;">
-    <p>Type the missing lyrics below:</p>
-    <textarea id="userInput" rows="4" cols="50"></textarea><br>
+    <p>Fill in the missing words (3–10 words):</p>
+    <textarea id="userInput" rows="2" cols="50"></textarea><br>
     <button id="checkButton">Check Answer</button>
     <button id="showAnswerButton">Show Answer</button>
     <div id="result"></div>
   </div>
 
   <script>
-    // Sample list of songs (expand this list as needed)
+    // Sample list of songs (expand as needed)
     const songs = [
       {artist: "Queen", title: "Bohemian Rhapsody"},
       {artist: "John Lennon", title: "Imagine"},
@@ -59,7 +62,7 @@
       // Add more songs here...
     ];
 
-    // Populate the dropdown
+    // Populate the dropdown menu.
     const songSelect = document.getElementById('songSelect');
     songs.forEach((song, index) => {
       const option = document.createElement('option');
@@ -68,10 +71,10 @@
       songSelect.appendChild(option);
     });
 
-    let hiddenText = "";  // to store the hidden block
-    let fullLyrics = "";  // to store the full lyrics for answer reference
+    let hiddenText = "";  // The text that has been hidden.
+    let snippetWithPlaceholder = "";  // The displayed snippet.
 
-    // Fetch lyrics from the free lyrics.ovh API
+    // Fetch lyrics from the free lyrics.ovh API.
     async function fetchLyrics(artist, title) {
       try {
         const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
@@ -87,34 +90,55 @@
       }
     }
 
-    // Prepare the quiz by hiding a random block of 2–3 lines
-    function prepareLyricQuiz(lyrics) {
-      fullLyrics = lyrics;
+    // Prepare a snippet quiz:
+    // 1. Choose a contiguous snippet of 6 lines from the full lyrics.
+    // 2. In one randomly chosen line, hide a block of 3–10 words.
+    function prepareSnippetQuiz(lyrics) {
       const lines = lyrics.split('\n').filter(line => line.trim() !== "");
-      if (lines.length < 5) {
-        // Not enough lines to hide a block, so return as is.
-        return lyrics;
+      if (lines.length < 6) {
+        return { snippet: lyrics, hidden: "" };
       }
-      // Decide on a block length (use 2 or 3 lines; here we use 3 if possible)
-      const blockLength = lines.length >= 5 ? Math.min(3, lines.length - 2) : 2;
-      // Choose a random starting index (avoid first and last lines)
-      const startIndex = Math.floor(Math.random() * (lines.length - blockLength - 1)) + 1;
-      // Save the hidden text
-      hiddenText = lines.slice(startIndex, startIndex + blockLength).join('\n');
-      // Replace the selected lines with a placeholder
-      const placeholder = "__________";
-      for (let i = startIndex; i < startIndex + blockLength; i++) {
-        lines[i] = placeholder;
-      }
-      return lines.join('\n');
+      // Choose a snippet of 6 consecutive lines.
+      const snippetLength = 6;
+      const startIndex = Math.floor(Math.random() * (lines.length - snippetLength + 1));
+      let snippetLines = lines.slice(startIndex, startIndex + snippetLength);
+
+      // Select one line from the snippet that has at least 5 words.
+      let candidateIndices = [];
+      snippetLines.forEach((line, idx) => {
+        const wordCount = line.split(/\s+/).filter(word => word.trim() !== "").length;
+        if (wordCount >= 5) candidateIndices.push(idx);
+      });
+      if (candidateIndices.length === 0) candidateIndices = [0];
+      const chosenLineIndex = candidateIndices[Math.floor(Math.random() * candidateIndices.length)];
+      let targetLine = snippetLines[chosenLineIndex];
+      const words = targetLine.split(' ').filter(word => word.trim() !== "");
+      const totalWords = words.length;
+
+      // Determine block length (between 3 and 10 words, but not more than available words - 1).
+      const minBlock = 3;
+      const maxBlock = Math.min(10, totalWords - 1);
+      const blockLength = Math.floor(Math.random() * (maxBlock - minBlock + 1)) + minBlock;
+      const maxStart = totalWords - blockLength;
+      const wordStart = Math.floor(Math.random() * (maxStart + 1));
+      hiddenText = words.slice(wordStart, wordStart + blockLength).join(' ');
+
+      // Replace the selected words with a placeholder span.
+      const placeholder = `<span class="placeholder">________</span>`;
+      const newLineWords = words.slice(0, wordStart)
+                              .concat([placeholder])
+                              .concat(words.slice(wordStart + blockLength));
+      snippetLines[chosenLineIndex] = newLineWords.join(' ');
+
+      return { snippet: snippetLines.join('\n'), hidden: hiddenText };
     }
 
-    // Normalize text for a basic comparison (ignores punctuation, case, and extra spaces)
+    // Normalize text for basic comparison.
     function normalizeText(text) {
       return text.trim().toLowerCase().replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ");
     }
 
-    // Event: Fetch lyrics and prepare the quiz
+    // Event: Fetch lyrics and prepare the quiz snippet.
     document.getElementById('fetchButton').addEventListener('click', async () => {
       const selectedIndex = songSelect.value;
       if (selectedIndex === "") {
@@ -122,38 +146,37 @@
         return;
       }
       const song = songs[selectedIndex];
-      document.getElementById('lyricDisplay').textContent = "Loading lyrics...";
+      document.getElementById('snippetDisplay').innerHTML = "Loading lyrics...";
       const lyrics = await fetchLyrics(song.artist, song.title);
       if (lyrics.startsWith("Error") || lyrics.startsWith("Lyrics not found")) {
-        document.getElementById('lyricDisplay').textContent = lyrics;
+        document.getElementById('snippetDisplay').innerHTML = lyrics;
         document.getElementById('quizSection').style.display = "none";
         return;
       }
-      const quizText = prepareLyricQuiz(lyrics);
-      document.getElementById('lyricDisplay').textContent = quizText;
+      const quizData = prepareSnippetQuiz(lyrics);
+      snippetWithPlaceholder = quizData.snippet;
+      hiddenText = quizData.hidden;
+      document.getElementById('snippetDisplay').innerHTML = snippetWithPlaceholder;
       document.getElementById('quizSection').style.display = "block";
       document.getElementById('result').textContent = "";
       document.getElementById('userInput').value = "";
     });
 
-    // Event: Check the answer
+    // Event: Check the answer.
     document.getElementById('checkButton').addEventListener('click', () => {
       const userAnswer = document.getElementById('userInput').value;
       if (!userAnswer.trim()) {
-        alert("Please type your answer in the box.");
+        alert("Please type your answer.");
         return;
       }
       if (normalizeText(userAnswer) === normalizeText(hiddenText)) {
         document.getElementById('result').textContent = "Correct!";
       } else {
-        document.getElementById('result').textContent = "Not quite. Try again or click 'Show Answer' to reveal the correct lyrics.";
+        document.getElementById('result').textContent = "Not quite. Try again or click 'Show Answer'.";
       }
     });
 
-    // Event: Show the correct answer
+    // Event: Show the correct answer.
     document.getElementById('showAnswerButton').addEventListener('click', () => {
-      document.getElementById('result').textContent = "The missing lyrics are:\n" + hiddenText;
-    });
-  </script>
-</body>
-</html>
+      document.get
+
