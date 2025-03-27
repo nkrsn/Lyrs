@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Practice Lyrics</title>
+  <title>Complete the Lyric</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -13,40 +13,53 @@
     h1 {
       text-align: center;
     }
-    select, button {
+    select, button, textarea {
       font-size: 1rem;
       margin: 0.5rem 0;
       padding: 0.5rem;
     }
-    #lyricsDisplay {
+    #lyricDisplay {
       white-space: pre-wrap;
       border: 1px solid #ccc;
       padding: 1rem;
       margin-top: 1rem;
     }
+    #result {
+      font-weight: bold;
+      margin-top: 1rem;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
-  <h1>Practice Lyrics</h1>
-  <p>Select a song to practice its chorus and bridge sections:</p>
+  <h1>Complete the Lyric</h1>
+  <p>Select a song to practice completing its lyrics:</p>
   <select id="songSelect">
     <option value="">--Select a Song--</option>
   </select>
   <br>
-  <button id="fetchButton">Fetch Lyrics</button>
-  <button id="toggleButton">Hide/Show Lyrics</button>
-  <div id="lyricsDisplay"></div>
+  <button id="fetchButton">Fetch Lyrics & Prepare Quiz</button>
+  <div id="lyricDisplay"></div>
+  <div id="quizSection" style="display:none;">
+    <p>Type the missing lyrics below:</p>
+    <textarea id="userInput" rows="4" cols="50"></textarea><br>
+    <button id="checkButton">Check Answer</button>
+    <button id="showAnswerButton">Show Answer</button>
+    <div id="result"></div>
+  </div>
 
   <script>
-    // List of sample songs (expand this list as desired)
+    // Sample list of songs (expand this list as needed)
     const songs = [
       {artist: "Queen", title: "Bohemian Rhapsody"},
       {artist: "John Lennon", title: "Imagine"},
-      {artist: "Gloria Gaynor", title: "I Will Survive"}
+      {artist: "Gloria Gaynor", title: "I Will Survive"},
+      {artist: "Michael Jackson", title: "Billie Jean"},
+      {artist: "Neil Diamond", title: "Sweet Caroline"}
       // Add more songs here...
     ];
 
-    // Populate the dropdown with song options.
+    // Populate the dropdown
     const songSelect = document.getElementById('songSelect');
     songs.forEach((song, index) => {
       const option = document.createElement('option');
@@ -55,9 +68,10 @@
       songSelect.appendChild(option);
     });
 
-    const lyricsDisplay = document.getElementById('lyricsDisplay');
+    let hiddenText = "";  // to store the hidden block
+    let fullLyrics = "";  // to store the full lyrics for answer reference
 
-    // Function to fetch lyrics from lyrics.ovh
+    // Fetch lyrics from the free lyrics.ovh API
     async function fetchLyrics(artist, title) {
       try {
         const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
@@ -73,37 +87,34 @@
       }
     }
 
-    // Function to extract sections labeled as Chorus or Bridge.
-    function extractSections(lyrics) {
-      // Split lyrics into lines.
-      const lines = lyrics.split('\n');
-      let output = "";
-      let capture = false;
-      let currentSection = "";
-      lines.forEach(line => {
-        // Look for markers like [Chorus] or [Bridge] (case-insensitive)
-        if (line.match(/\[.*(chorus|bridge).*]/i)) {
-          // If a section was being captured, add it before starting a new one.
-          if (currentSection) {
-            output += currentSection + "\n\n";
-            currentSection = "";
-          }
-          output += line + "\n";
-          capture = true;
-        } else if (capture && line.trim() !== "") {
-          // Append lines to the current section.
-          currentSection += line + "\n";
-        } else {
-          capture = false;
-        }
-      });
-      if (currentSection) {
-        output += currentSection;
+    // Prepare the quiz by hiding a random block of 2–3 lines
+    function prepareLyricQuiz(lyrics) {
+      fullLyrics = lyrics;
+      const lines = lyrics.split('\n').filter(line => line.trim() !== "");
+      if (lines.length < 5) {
+        // Not enough lines to hide a block, so return as is.
+        return lyrics;
       }
-      return output || "No chorus or bridge sections found in these lyrics.";
+      // Decide on a block length (use 2 or 3 lines; here we use 3 if possible)
+      const blockLength = lines.length >= 5 ? Math.min(3, lines.length - 2) : 2;
+      // Choose a random starting index (avoid first and last lines)
+      const startIndex = Math.floor(Math.random() * (lines.length - blockLength - 1)) + 1;
+      // Save the hidden text
+      hiddenText = lines.slice(startIndex, startIndex + blockLength).join('\n');
+      // Replace the selected lines with a placeholder
+      const placeholder = "__________";
+      for (let i = startIndex; i < startIndex + blockLength; i++) {
+        lines[i] = placeholder;
+      }
+      return lines.join('\n');
     }
 
-    // Event listener for fetching lyrics.
+    // Normalize text for a basic comparison (ignores punctuation, case, and extra spaces)
+    function normalizeText(text) {
+      return text.trim().toLowerCase().replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ");
+    }
+
+    // Event: Fetch lyrics and prepare the quiz
     document.getElementById('fetchButton').addEventListener('click', async () => {
       const selectedIndex = songSelect.value;
       if (selectedIndex === "") {
@@ -111,19 +122,37 @@
         return;
       }
       const song = songs[selectedIndex];
-      lyricsDisplay.textContent = "Loading lyrics...";
+      document.getElementById('lyricDisplay').textContent = "Loading lyrics...";
       const lyrics = await fetchLyrics(song.artist, song.title);
-      const sections = extractSections(lyrics);
-      lyricsDisplay.textContent = sections;
+      if (lyrics.startsWith("Error") || lyrics.startsWith("Lyrics not found")) {
+        document.getElementById('lyricDisplay').textContent = lyrics;
+        document.getElementById('quizSection').style.display = "none";
+        return;
+      }
+      const quizText = prepareLyricQuiz(lyrics);
+      document.getElementById('lyricDisplay').textContent = quizText;
+      document.getElementById('quizSection').style.display = "block";
+      document.getElementById('result').textContent = "";
+      document.getElementById('userInput').value = "";
     });
 
-    // Toggle button to hide/show the lyrics for practice.
-    document.getElementById('toggleButton').addEventListener('click', () => {
-      if (lyricsDisplay.style.display === "none") {
-        lyricsDisplay.style.display = "block";
-      } else {
-        lyricsDisplay.style.display = "none";
+    // Event: Check the answer
+    document.getElementById('checkButton').addEventListener('click', () => {
+      const userAnswer = document.getElementById('userInput').value;
+      if (!userAnswer.trim()) {
+        alert("Please type your answer in the box.");
+        return;
       }
+      if (normalizeText(userAnswer) === normalizeText(hiddenText)) {
+        document.getElementById('result').textContent = "Correct!";
+      } else {
+        document.getElementById('result').textContent = "Not quite. Try again or click 'Show Answer' to reveal the correct lyrics.";
+      }
+    });
+
+    // Event: Show the correct answer
+    document.getElementById('showAnswerButton').addEventListener('click', () => {
+      document.getElementById('result').textContent = "The missing lyrics are:\n" + hiddenText;
     });
   </script>
 </body>
