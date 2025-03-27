@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Complete the Lyric Challenge v6</title>
+  <title>Complete the Lyric Challenge</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -42,6 +42,8 @@
   </select>
   <br>
   <button id="fetchButton">Fetch Lyrics &amp; Prepare Quiz</button>
+  <button id="newSongButton">New Song Quiz</button>
+  <button id="refreshListButton">Refresh Song List</button>
   <div id="snippetDisplay"></div>
   <div id="quizSection" style="display:none;">
     <p>Fill in the missing words (3–10 words):</p>
@@ -53,29 +55,156 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Sample list of songs (expand as needed)
-      const songs = [
+      // A master list of over 100 popular songs.
+      const masterSongs = [
         {artist: "Queen", title: "Bohemian Rhapsody"},
         {artist: "John Lennon", title: "Imagine"},
         {artist: "Gloria Gaynor", title: "I Will Survive"},
         {artist: "Michael Jackson", title: "Billie Jean"},
-        {artist: "Neil Diamond", title: "Sweet Caroline"}
-        // Add more songs here...
+        {artist: "Neil Diamond", title: "Sweet Caroline"},
+        {artist: "Journey", title: "Don't Stop Believin'"},
+        {artist: "ABBA", title: "Dancing Queen"},
+        {artist: "The Beatles", title: "Hey Jude"},
+        {artist: "Elvis Presley", title: "Jailhouse Rock"},
+        {artist: "Whitney Houston", title: "I Will Always Love You"},
+        {artist: "Eagles", title: "Hotel California"},
+        {artist: "Led Zeppelin", title: "Stairway to Heaven"},
+        {artist: "Bob Dylan", title: "Like a Rolling Stone"},
+        {artist: "Nirvana", title: "Smells Like Teen Spirit"},
+        {artist: "Marvin Gaye", title: "What's Going On"},
+        {artist: "Aretha Franklin", title: "Respect"},
+        {artist: "The Beach Boys", title: "Good Vibrations"},
+        {artist: "Jimi Hendrix", title: "Purple Haze"},
+        {artist: "The Beatles", title: "Yesterday"},
+        {artist: "The Temptations", title: "My Girl"},
+        {artist: "Stevie Wonder", title: "Superstition"},
+        {artist: "Bob Marley", title: "No Woman No Cry"},
+        {artist: "U2", title: "One"},
+        {artist: "Oasis", title: "Wonderwall"},
+        {artist: "Bon Jovi", title: "Livin' on a Prayer"},
+        {artist: "Michael Jackson", title: "Beat It"},
+        {artist: "Michael Jackson", title: "Thriller"},
+        {artist: "Santana", title: "Smooth"},
+        {artist: "Adele", title: "Rolling in the Deep"},
+        {artist: "Ed Sheeran", title: "Shape of You"},
+        {artist: "Mark Ronson ft. Bruno Mars", title: "Uptown Funk"},
+        {artist: "The Weeknd", title: "Blinding Lights"},
+        {artist: "Adele", title: "Someone Like You"},
+        {artist: "Lady Gaga", title: "Bad Romance"},
+        {artist: "Beyoncé", title: "Crazy in Love"},
+        {artist: "Backstreet Boys", title: "I Want It That Way"},
+        {artist: "The Rolling Stones", title: "Paint It Black"},
+        {artist: "AC/DC", title: "Back In Black"},
+        {artist: "Guns N' Roses", title: "Sweet Child o' Mine"},
+        {artist: "Metallica", title: "Enter Sandman"},
+        {artist: "Prince", title: "Purple Rain"},
+        {artist: "Eminem", title: "Lose Yourself"},
+        {artist: "Coldplay", title: "Yellow"},
+        {artist: "Katy Perry", title: "Firework"},
+        {artist: "Rihanna", title: "Umbrella"},
+        {artist: "Drake", title: "Hotline Bling"},
+        {artist: "Taylor Swift", title: "Shake It Off"},
+        {artist: "Britney Spears", title: "Toxic"},
+        {artist: "Sia", title: "Chandelier"},
+        {artist: "Shakira", title: "Hips Don't Lie"},
+        {artist: "Red Hot Chili Peppers", title: "Under the Bridge"},
+        {artist: "Linkin Park", title: "In the End"},
+        {artist: "Foo Fighters", title: "Everlong"},
+        {artist: "Green Day", title: "Boulevard of Broken Dreams"},
+        {artist: "The Police", title: "Every Breath You Take"},
+        {artist: "Celine Dion", title: "My Heart Will Go On"},
+        {artist: "Madonna", title: "Like a Prayer"},
+        {artist: "Billy Joel", title: "Piano Man"},
+        {artist: "Eurythmics", title: "Sweet Dreams (Are Made of This)"},
+        {artist: "Fleetwood Mac", title: "Go Your Own Way"},
+        {artist: "Bonnie Tyler", title: "Total Eclipse of the Heart"},
+        {artist: "Journey", title: "Open Arms"},
+        {artist: "Cyndi Lauper", title: "Girls Just Want to Have Fun"},
+        {artist: "Def Leppard", title: "Pour Some Sugar On Me"},
+        {artist: "Queen", title: "We Will Rock You"},
+        {artist: "Queen", title: "We Are the Champions"},
+        {artist: "The Beatles", title: "Let It Be"},
+        {artist: "Simon & Garfunkel", title: "The Sound of Silence"},
+        {artist: "U2", title: "Beautiful Day"},
+        {artist: "Snoop Dogg", title: "Drop It Like It's Hot"},
+        {artist: "Dr. Dre", title: "The Next Episode"},
+        {artist: "Notorious B.I.G.", title: "Juicy"},
+        {artist: "Outkast", title: "Hey Ya!"},
+        {artist: "Kanye West", title: "Stronger"},
+        {artist: "Jay-Z", title: "99 Problems"},
+        {artist: "Linkin Park", title: "Numb"},
+        {artist: "Paramore", title: "Misery Business"},
+        {artist: "Imagine Dragons", title: "Radioactive"},
+        {artist: "Miley Cyrus", title: "Wrecking Ball"},
+        {artist: "OneRepublic", title: "Counting Stars"},
+        {artist: "Ariana Grande", title: "Thank U, Next"},
+        {artist: "Bill Withers", title: "Ain't No Sunshine"},
+        {artist: "Etta James", title: "At Last"},
+        {artist: "Frank Sinatra", title: "My Way"},
+        {artist: "Dean Martin", title: "That's Amore"},
+        {artist: "Louis Armstrong", title: "What a Wonderful World"},
+        {artist: "Elton John", title: "Rocket Man"},
+        {artist: "Rod Stewart", title: "Maggie May"},
+        {artist: "Phil Collins", title: "In the Air Tonight"},
+        {artist: "George Michael", title: "Faith"},
+        {artist: "Spice Girls", title: "Wannabe"},
+        {artist: "Destiny's Child", title: "Survivor"},
+        {artist: "Kool & The Gang", title: "Celebration"},
+        {artist: "Earth, Wind & Fire", title: "September"},
+        {artist: "The Supremes", title: "Stop! In the Name of Love"},
+        {artist: "The Jackson 5", title: "I Want You Back"},
+        {artist: "Maroon 5", title: "Sugar"},
+        {artist: "Coldplay", title: "Viva La Vida"},
+        {artist: "Imagine Dragons", title: "Believer"},
+        {artist: "One Direction", title: "What Makes You Beautiful"},
+        {artist: "Lorde", title: "Royals"},
+        {artist: "The Black Keys", title: "Lonely Boy"},
+        {artist: "MGMT", title: "Electric Feel"},
+        {artist: "Tame Impala", title: "The Less I Know the Better"},
+        {artist: "Arctic Monkeys", title: "Do I Wanna Know?"},
+        {artist: "The Killers", title: "Mr. Brightside"},
+        {artist: "Kings of Leon", title: "Use Somebody"},
+        {artist: "Fall Out Boy", title: "Sugar, We're Goin Down"},
+        {artist: "Panic! At The Disco", title: "I Write Sins Not Tragedies"},
+        {artist: "Paramore", title: "Ain't It Fun"},
+        {artist: "The Script", title: "Breakeven"},
+        {artist: "Hozier", title: "Take Me to Church"},
+        {artist: "Vance Joy", title: "Riptide"}
       ];
+      
+      // This will store the current list of songs shown in the dropdown.
+      let currentSongs = [];
 
-      // Populate the dropdown menu.
-      const songSelect = document.getElementById('songSelect');
-      songs.forEach((song, index) => {
-        const option = document.createElement('option');
-        option.value = index;
-        option.textContent = `${song.title} by ${song.artist}`;
-        songSelect.appendChild(option);
-      });
+      // Shuffle function (Fisher-Yates algorithm)
+      function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
 
-      let hiddenText = "";  // The text that has been hidden.
-      let snippetWithPlaceholder = "";  // The displayed snippet.
+      // Refresh the song list by randomly selecting 5 songs from the master list.
+      function refreshSongList() {
+        const shuffled = shuffle([...masterSongs]);
+        currentSongs = shuffled.slice(0, 5);
+        const songSelect = document.getElementById('songSelect');
+        songSelect.innerHTML = '<option value="">--Select a Song--</option>';
+        currentSongs.forEach((song, index) => {
+          const option = document.createElement('option');
+          option.value = index;
+          option.textContent = `${song.title} by ${song.artist}`;
+          songSelect.appendChild(option);
+        });
+      }
 
-      // Fetch lyrics from the free lyrics.ovh API.
+      // Initially populate the dropdown.
+      refreshSongList();
+
+      let hiddenText = "";             // Stores the missing words.
+      let snippetWithPlaceholder = ""; // Stores the snippet with the placeholder.
+
+      // Fetch lyrics using the free lyrics.ovh API.
       async function fetchLyrics(artist, title) {
         try {
           const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
@@ -92,19 +221,18 @@
       }
 
       // Prepare a snippet quiz:
-      // 1. Choose a contiguous snippet of 6 lines from the full lyrics.
-      // 2. In one randomly chosen line, hide a block of 3–10 words.
+      // 1. Choose a snippet of 6 consecutive lines from the full lyrics.
+      // 2. In one randomly chosen line (with at least 5 words), hide a contiguous block of 3–10 words.
       function prepareSnippetQuiz(lyrics) {
         const lines = lyrics.split('\n').filter(line => line.trim() !== "");
         if (lines.length < 6) {
           return { snippet: lyrics, hidden: "" };
         }
-        // Choose a snippet of 6 consecutive lines.
         const snippetLength = 6;
         const startIndex = Math.floor(Math.random() * (lines.length - snippetLength + 1));
         let snippetLines = lines.slice(startIndex, startIndex + snippetLength);
 
-        // Select one line from the snippet that has at least 5 words.
+        // Choose a candidate line that has at least 5 words.
         let candidateIndices = [];
         snippetLines.forEach((line, idx) => {
           const wordCount = line.split(/\s+/).filter(word => word.trim() !== "").length;
@@ -116,7 +244,7 @@
         const words = targetLine.split(' ').filter(word => word.trim() !== "");
         const totalWords = words.length;
 
-        // Determine block length (between 3 and 10 words, but not more than available words - 1).
+        // Determine the block length (between 3 and 10 words, but not more than available words - 1).
         const minBlock = 3;
         const maxBlock = Math.min(10, totalWords - 1);
         const blockLength = Math.floor(Math.random() * (maxBlock - minBlock + 1)) + minBlock;
@@ -124,29 +252,23 @@
         const wordStart = Math.floor(Math.random() * (maxStart + 1));
         hiddenText = words.slice(wordStart, wordStart + blockLength).join(' ');
 
-        // Replace the selected words with a placeholder span.
+        // Replace the selected words with a placeholder.
         const placeholder = `<span class="placeholder">________</span>`;
         const newLineWords = words.slice(0, wordStart)
-                                .concat([placeholder])
-                                .concat(words.slice(wordStart + blockLength));
+                              .concat([placeholder])
+                              .concat(words.slice(wordStart + blockLength));
         snippetLines[chosenLineIndex] = newLineWords.join(' ');
 
         return { snippet: snippetLines.join('\n'), hidden: hiddenText };
       }
 
-      // Normalize text for basic comparison.
+      // Normalize text for a basic comparison.
       function normalizeText(text) {
         return text.trim().toLowerCase().replace(/[^\w\s]|_/g, "").replace(/\s+/g, " ");
       }
 
-      // Event: Fetch lyrics and prepare the quiz snippet.
-      document.getElementById('fetchButton').addEventListener('click', async () => {
-        const selectedIndex = songSelect.value;
-        if (selectedIndex === "") {
-          alert("Please select a song.");
-          return;
-        }
-        const song = songs[selectedIndex];
+      // Prepare the quiz for a given song.
+      async function prepareQuizForSong(song) {
         document.getElementById('snippetDisplay').innerHTML = "Loading lyrics...";
         const lyrics = await fetchLyrics(song.artist, song.title);
         if (lyrics.startsWith("Error") || lyrics.startsWith("Lyrics not found")) {
@@ -161,6 +283,31 @@
         document.getElementById('quizSection').style.display = "block";
         document.getElementById('result').textContent = "";
         document.getElementById('userInput').value = "";
+      }
+
+      // Event: Fetch quiz for the selected song.
+      document.getElementById('fetchButton').addEventListener('click', async () => {
+        const songSelect = document.getElementById('songSelect');
+        const selectedIndex = songSelect.value;
+        if (selectedIndex === "") {
+          alert("Please select a song.");
+          return;
+        }
+        const song = currentSongs[selectedIndex];
+        await prepareQuizForSong(song);
+      });
+
+      // Event: New Song Quiz (chooses a random song from the current list).
+      document.getElementById('newSongButton').addEventListener('click', async () => {
+        const randomIndex = Math.floor(Math.random() * currentSongs.length);
+        document.getElementById('songSelect').value = randomIndex;
+        const song = currentSongs[randomIndex];
+        await prepareQuizForSong(song);
+      });
+
+      // Event: Refresh the song list (selects five new songs from the master list).
+      document.getElementById('refreshListButton').addEventListener('click', () => {
+        refreshSongList();
       });
 
       // Event: Check the answer.
